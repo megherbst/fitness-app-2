@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fitness">
+  <meta name="theme-color" content="#0f1117">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>12-Week Fitness Plan</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c26;
+      --surface2: #1e2333;
+      --border: #2a2f42;
+      --text: #eeedf0;
+      --muted: #7b7f94;
+      --blue: #2a78d6;
+      --blue-dim: #1a3d6b;
+      --green: #1baf7a;
+      --green-dim: #0d4a33;
+      --amber: #eda100;
+      --amber-dim: #5a3e00;
+      --radius: 14px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+    .header {
+      padding: calc(var(--safe-top) + 16px) 20px 14px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .app-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 16px;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-btn:active { background: var(--border); }
+    .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .week-info { text-align: center; }
+    .week-num { font-size: 22px; font-weight: 700; line-height: 1; color: var(--text); }
+    .week-phase { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--green);
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 52px;
+      text-align: right;
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.15s;
+    }
+    .tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+    /* SCROLL AREA */
+    .scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px calc(var(--safe-bottom) + 24px);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* DAY CARDS */
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .day-card.rest {
+      background: var(--bg);
+      border-color: var(--border);
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day-card.rest .day-header {
+      border-bottom: none;
+      padding-bottom: 12px;
+    }
+
+    .day-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .day-mins {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .workouts { padding: 8px 0 4px; }
+
+    .workout-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .workout-item:active { background: var(--surface2); }
+
+    .check-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .check-circle.done {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .check-circle.done::after {
+      content: '';
+      width: 6px;
+      height: 10px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg) translateY(-1px);
+      display: block;
+    }
+
+    .workout-text { flex: 1; }
+
+    .workout-name {
+      font-size: 14px;
+      color: var(--text);
+      transition: color 0.2s;
+    }
+
+    .workout-name.done {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .workout-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .badge-cardio { background: var(--blue-dim); color: #7ab8f5; }
+    .badge-strength { background: var(--green-dim); color: #5ddfaa; }
+
+    .rest-label {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* COMPLETION BANNER */
+    .complete-banner {
+      background: var(--green-dim);
+      border: 1px solid var(--green);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    /* OVERVIEW TAB */
+    .overview { padding: 4px 0; }
+
+    .ov-phase {
+      margin-bottom: 20px;
+    }
+
+    .ov-phase-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .ov-weeks {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .ov-week {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s;
+    }
+
+    .ov-week.current { border-color: var(--green); }
+    .ov-week.complete { border-color: var(--green); background: var(--green-dim); }
+
+    .ov-week-num {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .ov-week-pct {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .ov-week.complete .ov-week-pct { color: var(--green); }
+
+    .ov-mini-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .ov-mini-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+    }
+
+    /* SPLIT TAB */
+    .split-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .split-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .split-row:last-child { border-bottom: none; }
+
+    .split-day-pill {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 38px;
+      text-align: center;
+    }
+
+    .split-focus {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--green);
+      flex: 1;
+    }
+
+    .split-muscles {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .info-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+
+    .info-key { font-size: 13px; color: var(--muted); }
+    .info-val { font-size: 13px; font-weight: 600; color: var(--text); }
+    .info-val.green { color: var(--green); }
+    .info-val.blue { color: var(--blue); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <span class="app-title">Fitness Plan</span>
+      <div class="week-nav">
+        <button class="nav-btn" id="prev-btn" onclick="changeWeek(-1)" aria-label="Previous week">&#8592;</button>
+        <div class="week-info">
+          <div class="week-num" id="week-num-label">W1</div>
+          <div class="week-phase" id="week-phase-label"></div>
+        </div>
+        <button class="nav-btn" id="next-btn" onclick="changeWeek(1)" aria-label="Next week">&#8594;</button>
+      </div>
+    </div>
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">0 / 0</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setTab('week', this)">This Week</div>
+    <div class="tab" onclick="setTab('overview', this)">Overview</div>
+    <div class="tab" onclick="setTab('split', this)">Split Guide</div>
+  </div>
+
+  <div class="scroll" id="main-content"></div>
+</div>
+
+<script>
+const PLAN = [
+  {w:1, phase:1, name:"Foundation", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:20,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:10,type:"strength"}]},
+    {d:"Tue", items:[{t:"Pull — back, biceps",m:10,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:20,type:"cardio"},{t:"Legs + core",m:10,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:10,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:20,type:"cardio"},{t:"Pull — back, biceps",m:10,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:2, phase:1, name:"Foundation", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:12,type:"strength"}]},
+    {d:"Tue", items:[{t:"Pull — back, biceps",m:12,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Legs + core",m:12,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:12,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Pull — back, biceps",m:12,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:3, phase:1, name:"Foundation", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:15,type:"strength"}]},
+    {d:"Tue", items:[{t:"Pull — back, biceps",m:15,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Legs + core",m:15,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:15,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Pull — back, biceps",m:15,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:4, phase:1, name:"Foundation", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:18,type:"strength"}]},
+    {d:"Tue", items:[{t:"Pull — back, biceps",m:18,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Legs + core",m:18,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:18,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Pull — back, biceps",m:18,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:5, phase:2, name:"Build", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:20,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Pull — back, biceps",m:20,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Legs + core",m:20,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:20,type:"strength"}]},
+    {d:"Fri", items:[{t:"Pull — back, biceps",m:20,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:6, phase:2, name:"Build", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:22,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Pull — back, biceps",m:22,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Legs + core",m:22,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:22,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:30,type:"cardio"},{t:"Pull — back, biceps",m:22,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:7, phase:2, name:"Build", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:24,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Pull — back, biceps",m:24,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Legs + core",m:24,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:24,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:35,type:"cardio"},{t:"Pull — back, biceps",m:24,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:8, phase:2, name:"Build", deload:true, days:[
+    {d:"Mon", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:15,type:"strength"}]},
+    {d:"Tue", items:[{t:"Pull — back, biceps",m:15,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Legs + core",m:15,type:"strength"}]},
+    {d:"Thu", items:[{t:"Push — chest, shoulders, triceps",m:15,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:25,type:"cardio"},{t:"Pull — back, biceps",m:15,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:9, phase:3, name:"Consolidate", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:32,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:32,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:32,type:"cardio"},{t:"Legs + core",m:25,type:"strength"}]},
+    {d:"Thu", items:[{t:"Peloton",m:32,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:32,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:10, phase:3, name:"Consolidate", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:36,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:36,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:36,type:"cardio"},{t:"Legs + core",m:25,type:"strength"}]},
+    {d:"Thu", items:[{t:"Peloton",m:36,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:36,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:11, phase:3, name:"Consolidate", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:40,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:40,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:40,type:"cardio"},{t:"Legs + core",m:25,type:"strength"}]},
+    {d:"Thu", items:[{t:"Peloton",m:40,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:40,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+  {w:12, phase:3, name:"Consolidate", deload:false, days:[
+    {d:"Mon", items:[{t:"Peloton",m:45,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Tue", items:[{t:"Peloton",m:45,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Wed", items:[{t:"Peloton",m:45,type:"cardio"},{t:"Legs + core",m:25,type:"strength"}]},
+    {d:"Thu", items:[{t:"Peloton",m:45,type:"cardio"},{t:"Push — chest, shoulders, triceps",m:25,type:"strength"}]},
+    {d:"Fri", items:[{t:"Peloton",m:45,type:"cardio"},{t:"Pull — back, biceps",m:25,type:"strength"}]},
+    {d:"Sat", items:[]}, {d:"Sun", items:[]},
+  ]},
+];
+
+const PHASE_LABELS = {1:"Phase 1: Foundation", 2:"Phase 2: Build", 3:"Phase 3: Consolidate"};
+
+let currentWeek = 0;
+let currentTab = 'week';
+let checked = {};
+
+function load() {
+  try { checked = JSON.parse(localStorage.getItem('fitness_checked') || '{}'); } catch(e) { checked = {}; }
+  currentWeek = parseInt(localStorage.getItem('fitness_week') || '0');
+}
+
+function save() {
+  localStorage.setItem('fitness_checked', JSON.stringify(checked));
+  localStorage.setItem('fitness_week', currentWeek);
+}
+
+function key(w, d, i) { return `${w}_${d}_${i}`; }
+
+function isDone(w, d, i) { return !!checked[key(w,d,i)]; }
+
+function toggle(w, d, i) {
+  const k = key(w,d,i);
+  checked[k] = !checked[k];
+  save();
+  renderTab();
+}
+
+function weekProgress(wi) {
+  const week = PLAN[wi];
+  let total = 0, done = 0;
+  week.days.forEach((day, di) => {
+    day.items.forEach((_, ii) => { total++; if(isDone(week.w, di, ii)) done++; });
+  });
+  return {total, done, pct: total > 0 ? Math.round(done/total*100) : 0};
+}
+
+function changeWeek(delta) {
+  currentWeek = Math.max(0, Math.min(11, currentWeek + delta));
+  save();
+  renderHeader();
+  if(currentTab === 'week') renderWeekTab();
+  else if(currentTab === 'overview') renderOverviewTab();
+}
+
+function setTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTab();
+}
+
+function renderHeader() {
+  const week = PLAN[currentWeek];
+  document.getElementById('week-num-label').textContent = 'W' + week.w;
+  document.getElementById('week-phase-label').textContent = PHASE_LABELS[week.phase] + (week.deload ? ' · Deload' : '');
+  document.getElementById('prev-btn').disabled = currentWeek === 0;
+  document.getElementById('next-btn').disabled = currentWeek === 11;
+
+  const {total, done, pct} = weekProgress(currentWeek);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = done + ' / ' + total;
+}
+
+function renderTab() {
+  renderHeader();
+  if(currentTab === 'week') renderWeekTab();
+  else if(currentTab === 'overview') renderOverviewTab();
+  else if(currentTab === 'split') renderSplitTab();
+}
+
+function renderWeekTab() {
+  const week = PLAN[currentWeek];
+  const {total, done} = weekProgress(currentWeek);
+  const content = document.getElementById('main-content');
+  let html = '';
+
+  if(total > 0 && done === total) {
+    html += `<div class="complete-banner" style="display:block">&#10003; Week ${week.w} complete!</div>`;
+  }
+
+  week.days.forEach((day, di) => {
+    const isRest = day.items.length === 0;
+    html += `<div class="day-card${isRest ? ' rest' : ''}">`;
+    const dayTotal = day.items.reduce((s, it) => s + it.m, 0);
+    html += `<div class="day-header">
+      <span class="day-name">${day.d}</span>
+      ${!isRest ? `<span class="day-mins">${dayTotal} min</span>` : ''}
+    </div>`;
+
+    if(isRest) {
+      html += `<div class="rest-label">Rest</div>`;
+    } else {
+      html += `<div class="workouts">`;
+      day.items.forEach((item, ii) => {
+        const done = isDone(week.w, di, ii);
+        html += `<div class="workout-item" onclick="toggle(${week.w}, ${di}, ${ii})">
+          <div class="check-circle${done ? ' done' : ''}"></div>
+          <div class="workout-text">
+            <div class="workout-name${done ? ' done' : ''}">${item.t}</div>
+          </div>
+          <span class="workout-badge badge-${item.type}">${item.m} min</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+function renderOverviewTab() {
+  const phases = [
+    {label: "Phase 1 — Foundation", weeks: [0,1,2,3]},
+    {label: "Phase 2 — Build", weeks: [4,5,6,7]},
+    {label: "Phase 3 — Consolidate", weeks: [8,9,10,11]},
+  ];
+
+  let html = '<div class="overview">';
+  phases.forEach(phase => {
+    html += `<div class="ov-phase"><div class="ov-phase-title">${phase.label}</div><div class="ov-weeks">`;
+    phase.weeks.forEach(wi => {
+      const week = PLAN[wi];
+      const {pct} = weekProgress(wi);
+      const isCurrent = wi === currentWeek;
+      const isComplete = pct === 100;
+      html += `<div class="ov-week${isCurrent ? ' current' : ''}${isComplete ? ' complete' : ''}"
+        onclick="currentWeek=${wi}; save(); setTab('week', document.querySelectorAll('.tab')[0]); document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));">
+        <div class="ov-week-num">W${week.w}</div>
+        <div class="ov-week-pct">${isComplete ? '✓ Done' : pct + '%'}</div>
+        <div class="ov-mini-bar"><div class="ov-mini-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += '</div>';
+
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function renderSplitTab() {
+  const split = [
+    {d:"Mon", focus:"Push", muscles:"Chest, shoulders, triceps"},
+    {d:"Tue", focus:"Pull", muscles:"Back, biceps"},
+    {d:"Wed", focus:"Legs", muscles:"Quads, glutes, hamstrings, core"},
+    {d:"Thu", focus:"Push", muscles:"Chest, shoulders, triceps"},
+    {d:"Fri", focus:"Pull", muscles:"Back, biceps + core"},
+  ];
+
+  let html = `
+  <div class="info-card">
+    <div class="info-label">Daily strength split</div>
+    <div class="info-row"><span class="info-key">Pattern repeats</span><span class="info-val green">Every week</span></div>
+    <div class="info-row"><span class="info-key">Each group frequency</span><span class="info-val">2x / week</span></div>
+    <div class="info-row"><span class="info-key">Rest between same group</span><span class="info-val">48+ hrs</span></div>
+  </div>
+  <div class="split-card">`;
+
+  split.forEach(row => {
+    html += `<div class="split-row">
+      <div class="split-day-pill">${row.d}</div>
+      <div style="flex:1">
+        <div class="split-focus">${row.focus}</div>
+        <div class="split-muscles">${row.muscles}</div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `
+  <div class="info-card">
+    <div class="info-label">Target by week 12</div>
+    <div class="info-row"><span class="info-key">Aerobic</span><span class="info-val blue">35–43 MET-hrs/wk</span></div>
+    <div class="info-row"><span class="info-key">Resistance</span><span class="info-val green">125 min/wk</span></div>
+    <div class="info-row"><span class="info-key">Daily session</span><span class="info-val">~65 min</span></div>
+    <div class="info-row"><span class="info-key">Rest days</span><span class="info-val">Sat + Sun</span></div>
+  </div>
+  <div class="info-card">
+    <div class="info-label">Notes</div>
+    <div class="info-row"><span class="info-key">Week 8</span><span class="info-val">Deload — intentional</span></div>
+    <div class="info-row"><span class="info-key">MET estimate</span><span class="info-val">~8 METs (moderate Peloton)</span></div>
+    <div class="info-row"><span class="info-key">Order</span><span class="info-val">Strength first or Peloton first</span></div>
+  </div>`;
+
+  document.getElementById('main-content').innerHTML = html;
+}
+
+// Service worker registration
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+load();
+renderTab();
+</script>
+</body>
+</html>
